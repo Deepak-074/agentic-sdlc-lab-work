@@ -154,6 +154,7 @@ def refund_invoice(db: Session, invoice_repo: repository.InvoiceRepository, orde
     try:
         invoice.status = payment_models.InvoiceStatus.CANCELLED
         order.status = order_models.OrderStatus.CANCELLED
+        order_repo.add_history(order_id, order_models.OrderStatus.CANCELLED)
         db.commit()
         db.refresh(invoice)
     except Exception:

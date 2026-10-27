@@ -9,6 +9,8 @@ class OrderRepository:
     def create_order(self, user_id: int, item: str):
         order = models.Order(user_id=user_id, item=item)
         self._db.add(order)
+        self._db.flush()
+        self.add_history(order.id, models.OrderStatus.RECEIVED)
         self._db.commit()
         self._db.refresh(order)
         return order
@@ -50,3 +52,15 @@ class OrderRepository:
         self._db.commit()
         self._db.refresh(order)
         return order
+
+    def add_history(self, order_id: int, status) -> None:
+        """Queue a history row. The caller commits, so the row is atomic with the status change."""
+        self._db.add(models.OrderStatusHistory(order_id=order_id, status=status))
+
+    def list_history(self, order_id: int):
+        return (
+            self._db.query(models.OrderStatusHistory)
+            .filter(models.OrderStatusHistory.order_id == order_id)
+            .order_by(models.OrderStatusHistory.id)
+            .all()
+        )

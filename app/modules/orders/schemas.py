@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 from .models import OrderStatus
 
@@ -26,3 +27,12 @@ class PaginatedOrders(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+class OrderHistoryRead(BaseModel):
+    id: int
+    order_id: int
+    status: OrderStatus
+    changed_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

@@ -69,6 +69,8 @@ class InvoiceRepository:
             self._db.rollback()
             raise ValueError("Order not found")
         order.status = order_status
+        from app.modules.orders.repository import OrderRepository
+        OrderRepository(self._db).add_history(order_id, order_status)
 
         self._db.commit()
         self._db.refresh(invoice)

@@ -71,6 +71,8 @@ def update_order(db: Session, repo: repository.OrderRepository, order_id: int, *
     for key, value in kwargs.items():
         if value is not None:
             setattr(order, key, value)
+    if kwargs.get("status") is not None:
+        repo.add_history(order_id, kwargs["status"])
     try:
         db.commit()
         db.refresh(order)
@@ -78,6 +80,13 @@ def update_order(db: Session, repo: repository.OrderRepository, order_id: int, *
         db.rollback()
         raise
     return order
+
+
+def get_order_history(repo: repository.OrderRepository, order_id: int):
+    """Return the status history of an order. Raises OrderNotFoundError if the order does not exist."""
+    if not repo.get_order(order_id):
+        raise OrderNotFoundError()
+    return repo.list_history(order_id)
 
 
 def delete_order(db: Session, repo: repository.OrderRepository, order_id: int):
@@ -108,6 +117,7 @@ def cancel_order(db: Session, repo: repository.OrderRepository, order_id: int):
         raise OrderOwnershipError("Cannot cancel a returned order")
 
     order.status = models.OrderStatus.CANCELLED
+    repo.add_history(order_id, models.OrderStatus.CANCELLED)
     try:
         db.commit()
         db.refresh(order)

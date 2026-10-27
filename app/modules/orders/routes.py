@@ -117,3 +117,19 @@ def delete_order(
         service.delete_order(db, repo, order_id)
     except OrderNotFoundError:
         raise HTTPException(status_code=404, detail="Order not found")
+
+
+@router.get("/{order_id}/history", response_model=list[schemas.OrderHistoryRead])
+def get_order_history(
+    order_id: int,
+    db: Session = Depends(get_db),
+    repo: deps.OrderRepository = Depends(deps.get_orders_repository),
+    user: UserModel = Depends(get_current_user_obj),
+):
+    try:
+        service.require_order_ownership(repo, order_id, user.id)
+    except OrderNotFoundError:
+        raise HTTPException(status_code=404, detail="Order not found")
+    except OrderOwnershipError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return service.get_order_history(repo, order_id)

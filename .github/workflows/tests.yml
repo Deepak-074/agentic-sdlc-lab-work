@@ -34,3 +34,11 @@ jobs:
           cache: pip
       - run: pip install -e '.[dev]'
       - run: python -m pytest tests/integration -q
+
+  no-new-deps:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: python scripts/check_no_new_deps.py origin/${{ github.base_ref }}
