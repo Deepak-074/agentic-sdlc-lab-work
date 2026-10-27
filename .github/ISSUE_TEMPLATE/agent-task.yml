@@ -1,0 +1,30 @@
+name: Agent task contract
+description: A bounded task that an agent may work on
+labels: ["agent-task"]
+body:
+  - type: textarea
+    id: goal
+    attributes: { label: Goal, description: One sentence, what must be true when done }
+    validations: { required: true }
+  - type: textarea
+    id: context
+    attributes: { label: Context links, description: Files, docs, related issues. Links, not pasted code }
+  - type: input
+    id: in_scope
+    attributes: { label: In-scope paths, placeholder: "app/modules/orders/service.py, tests/unit/" }
+    validations: { required: true }
+  - type: input
+    id: out_of_scope
+    attributes: { label: Out of scope, value: "alembic/, .github/, pyproject.toml, any new dependency" }
+    validations: { required: true }
+  - type: textarea
+    id: acceptance
+    attributes: { label: Acceptance criteria, description: "Testable: a new failing test, then passing" }
+    validations: { required: true }
+  - type: textarea
+    id: stop
+    attributes: { label: "Stop and ask a human if", placeholder: "the fix needs a schema change or touches another module" }
+    validations: { required: true }
+  - type: input
+    id: reviewer
+    attributes: { label: Reviewer, placeholder: "@your-username" }

@@ -1,0 +1,10 @@
+{
+  "name": "agentic-sdlc-lab",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "containerEnv": { "AUTH_JWT_SECRET_KEY": "test-secret-key-for-local-dev-only" },
+  "postCreateCommand": "pip install -e '.[dev]' -r lab_mcp/requirements.txt",
+  "customizations": { "vscode": { "extensions": ["GitHub.copilot", "GitHub.copilot-chat", "ms-python.python"] } }
+}
