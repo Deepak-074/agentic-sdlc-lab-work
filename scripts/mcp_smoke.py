@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Smoke test for the lab MCP server over stdio. Env: LAB_REPO, LAB_API (and LAB_TOKEN for real GitHub)."""
-import asyncio, os
+import asyncio, os, sys
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 async def main():
-    params = StdioServerParameters(command="python", args=["-m", "lab_mcp.server"], env={**os.environ})
+    params = StdioServerParameters(command=sys.executable, args=["-m", "lab_mcp.server"], env={**os.environ})
     async with stdio_client(params) as (r, w):
         async with ClientSession(r, w) as s:
             await s.initialize()
