@@ -72,7 +72,3 @@ Integration tests use `TEST_DATABASE_URL` env var, falling back to `DATABASE_URL
 - Pydantic schemas for all API contracts (input/output).
 - `pytest.ini_options` sets `pythonpath = ["."]` and `asyncio_mode = "auto"` — no `@pytest.mark.asyncio` needed.
 - No linter/formatter/typechecker configured in `pyproject.toml` — none run in CI.
-
-## Example
-
-`curl http://localhost:8000/order/1` fetches one order.

@@ -82,7 +82,7 @@ curl -X POST http://localhost:8000/orders/ \
   -d '{"item": "laptop"}'
 
 # Get Order
-curl http://localhost:8000/order/1
+curl http://localhost:8000/orders/1
 
 # List Orders
 curl http://localhost:8000/orders/

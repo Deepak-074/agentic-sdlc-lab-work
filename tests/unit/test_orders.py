@@ -3,6 +3,7 @@ import pytest
 
 from app.modules.orders import service, repository, models
 from app.modules.orders.service import OrderStateMachine, InvalidOrderTransition
+from app.modules.orders.exceptions import OrderOwnershipError
 
 
 def _make_mock_repo(order=None):
@@ -177,3 +178,28 @@ def test_update_order_valid_status_transition():
     assert result.status == "processing"
     db.commit.assert_called_once()
     db.refresh.assert_called_once_with(order)
+
+
+# -- cancel_order tests (issue 2) ------------------------------------------------
+
+def test_cancel_order_success():
+    order = _make_order(status=models.OrderStatus.PROCESSING)
+    db = _make_db()
+    result = service.cancel_order(db, _make_mock_repo(order=order), 1)
+    assert result.status == models.OrderStatus.CANCELLED
+    db.commit.assert_called_once()
+
+
+def test_cancel_order_rejects_delivered():
+    order = _make_order(status=models.OrderStatus.DELIVERED)
+    db = _make_db()
+    with pytest.raises(OrderOwnershipError, match="delivered"):
+        service.cancel_order(db, _make_mock_repo(order=order), 1)
+    assert order.status == models.OrderStatus.DELIVERED
+    db.commit.assert_not_called()
+
+
+def test_cancel_order_rejects_already_cancelled():
+    order = _make_order(status=models.OrderStatus.CANCELLED)
+    with pytest.raises(OrderOwnershipError, match="already cancelled"):
+        service.cancel_order(_make_db(), _make_mock_repo(order=order), 1)

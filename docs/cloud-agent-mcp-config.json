@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "lab-issues": {
+      "type": "local",
+      "command": "python",
+      "args": ["-m", "lab_mcp.server"],
+      "tools": ["get_issue", "list_issues"],
+      "env": {
+        "LAB_REPO": "COPILOT_MCP_LAB_REPO",
+        "LAB_TOKEN": "COPILOT_MCP_LAB_TOKEN"
+      }
+    }
+  }
+}

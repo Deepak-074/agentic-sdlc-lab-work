@@ -185,3 +185,16 @@ def test_update_order_invalid_transition(client):
         "Authorization": f"Bearer {token}"
     })
     assert get_response.json()["status"] == "delivered"
+
+
+def test_cancel_delivered_order_returns_400(client):
+    client.post("/users/register", json={"username": "cancel_user", "password": "testpassword123"})
+    token = client.post("/users/login", json={"username": "cancel_user", "password": "testpassword123"}).json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    order_id = client.post("/orders/", json={"item": "laptop"}, headers=headers).json()["id"]
+    for next_status in ["processing", "fulfilled", "shipped", "delivered"]:
+        assert client.put(f"/orders/{order_id}", json={"status": next_status}, headers=headers).status_code == 200
+    response = client.post(f"/orders/{order_id}/cancel", headers=headers)
+    assert response.status_code == 400
+    assert "delivered" in response.json()["detail"]
+    assert client.get(f"/orders/{order_id}", headers=headers).json()["status"] == "delivered"
