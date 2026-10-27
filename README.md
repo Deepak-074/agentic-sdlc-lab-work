@@ -101,3 +101,14 @@ curl http://localhost:8000/orders/
 | `make test-unit` | Run unit tests |
 | `make test-integration` | Run integration tests |
 | `make migrations msg=<msg>` | Generate alembic migrations |
+
+## Payments
+
+Refund a paid invoice. The invoice and its order both become `cancelled`:
+
+```bash
+curl -X POST http://localhost:8000/payment/refund/1 \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Only `paid` invoices can be refunded, and only while the order can still be cancelled by the state machine.

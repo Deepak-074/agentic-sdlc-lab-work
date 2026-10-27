@@ -203,3 +203,8 @@ def test_cancel_order_rejects_already_cancelled():
     order = _make_order(status=models.OrderStatus.CANCELLED)
     with pytest.raises(OrderOwnershipError, match="already cancelled"):
         service.cancel_order(_make_db(), _make_mock_repo(order=order), 1)
+
+
+def test_delivered_only_leads_to_returned():
+    # Decision (issue 5 owner): DELIVERED is terminal except for returns.
+    assert OrderStateMachine.TRANSITIONS[models.OrderStatus.DELIVERED] == [models.OrderStatus.RETURNED]

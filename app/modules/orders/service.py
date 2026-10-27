@@ -27,7 +27,8 @@ class OrderStateMachine:
         models.OrderStatus.SHIPPED: [
             models.OrderStatus.DELIVERED
         ],
-        models.OrderStatus.DELIVERED: [],
+        models.OrderStatus.DELIVERED: [models.OrderStatus.RETURNED],
+        models.OrderStatus.RETURNED: [],
         models.OrderStatus.CANCELLED: [],
     }
 
@@ -103,6 +104,8 @@ def cancel_order(db: Session, repo: repository.OrderRepository, order_id: int):
 
     if order.status == models.OrderStatus.DELIVERED:
         raise OrderOwnershipError("Cannot cancel a delivered order")
+    if order.status == models.OrderStatus.RETURNED:
+        raise OrderOwnershipError("Cannot cancel a returned order")
 
     order.status = models.OrderStatus.CANCELLED
     try:

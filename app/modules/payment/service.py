@@ -5,6 +5,7 @@ from app.modules.orders import service as order_service
 from app.modules.orders import repository as order_repo
 from app.modules.orders import models as order_models
 from app.modules.orders.exceptions import OrderNotFoundError
+from app.modules.orders.service import OrderStateMachine
 
 
 class PaymentError(Exception):
@@ -78,7 +79,7 @@ def mark_invoice_paid(db: Session, invoice_repo: repository.InvoiceRepository, o
     if invoice.status == payment_models.InvoiceStatus.PAID:
         raise PaymentError("Invoice is already marked as paid")
 
-    invoice, order = invoice_repo.mark_invoice_paid_and_update_order(
+    invoice, order = invoice_repo.settle_invoice_and_advance_order(
         invoice_id, invoice.order_id, order_models.OrderStatus.FULFILLED
     )
     return invoice
@@ -99,7 +100,7 @@ def mark_invoice_paid_by_order_id(db: Session, invoice_repo: repository.InvoiceR
     if invoice.status == payment_models.InvoiceStatus.PAID:
         raise PaymentError("Invoice is already marked as paid")
 
-    invoice, order = invoice_repo.mark_invoice_paid_and_update_order(
+    invoice, order = invoice_repo.settle_invoice_and_advance_order(
         invoice.id, order_id, order_models.OrderStatus.FULFILLED
     )
     return invoice
@@ -134,3 +135,28 @@ def cancel_invoice_by_order_id(invoice_repo: repository.InvoiceRepository, order
     if invoice.status == payment_models.InvoiceStatus.PAID:
         raise PaymentError("Cannot cancel a paid invoice")
     return invoice_repo.update_invoice(invoice.id, status=payment_models.InvoiceStatus.CANCELLED)
+
+
+def refund_invoice(db: Session, invoice_repo: repository.InvoiceRepository, order_repo: order_repo.OrderRepository, order_id: int):
+    """Refund a PAID invoice: the invoice becomes CANCELLED and the order becomes CANCELLED.
+
+    The order transition is validated by the state machine, so a SHIPPED or DELIVERED order cannot be refunded.
+    """
+    invoice = invoice_repo.get_invoice_by_order_id(order_id)
+    if not invoice:
+        raise InvoiceNotFoundError(f"No invoice found for order {order_id}")
+    if invoice.status != payment_models.InvoiceStatus.PAID:
+        raise PaymentError("Only paid invoices can be refunded")
+    order = order_repo.get_order(order_id)
+    if not order:
+        raise OrderNotFoundError()
+    OrderStateMachine.validate_transition(order.status, order_models.OrderStatus.CANCELLED)
+    try:
+        invoice.status = payment_models.InvoiceStatus.CANCELLED
+        order.status = order_models.OrderStatus.CANCELLED
+        db.commit()
+        db.refresh(invoice)
+    except Exception:
+        db.rollback()
+        raise
+    return invoice

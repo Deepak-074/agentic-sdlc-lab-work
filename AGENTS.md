@@ -41,7 +41,7 @@ CANCELLED → (terminal)
 
 ### Cross-module coupling
 
-Payment depends on Orders (invoice generation advances order to PROCESSING; payment completion advances to FULFILLED). Orders depends on Payment (cancellation calls `cancel_invoice_by_order_id`). The `mark_invoice_paid_and_update_order()` method in the invoice repository updates both invoice and order atomically in a single transaction.
+Payment depends on Orders (invoice generation advances order to PROCESSING; payment completion advances to FULFILLED). Orders depends on Payment (cancellation calls `cancel_invoice_by_order_id`). `refund_invoice()` cancels a PAID invoice and its order, validating the transition through `OrderStateMachine`. The `settle_invoice_and_advance_order()` method in the invoice repository updates both invoice and order atomically in a single transaction.
 
 ## Testing
 

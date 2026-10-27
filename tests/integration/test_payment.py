@@ -204,3 +204,45 @@ def test_list_invoices(client):
 def test_payment_without_auth_returns_401(client):
     response = client.get("/payment/")
     assert response.status_code == 401
+
+
+# -- refund endpoint (issue 4) ----------------------------------------------------
+
+def _paid_order(client, token):
+    headers = {"Authorization": f"Bearer {token}"}
+    order_id = client.post("/orders/", json={"item": "laptop"}, headers=headers).json()["id"]
+    client.post("/payment/generate", json={"order_id": order_id}, headers=headers)
+    client.post(f"/payment/pay/{order_id}", headers=headers)
+    return order_id, headers
+
+
+def test_refund_paid_invoice(client):
+    token = _login(client)
+    order_id, headers = _paid_order(client, token)
+    response = client.post(f"/payment/refund/{order_id}", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+    assert client.get(f"/orders/{order_id}", headers=headers).json()["status"] == "cancelled"
+
+
+def test_refund_pending_invoice_returns_400(client):
+    token = _login(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    order_id = client.post("/orders/", json={"item": "laptop"}, headers=headers).json()["id"]
+    client.post("/payment/generate", json={"order_id": order_id}, headers=headers)
+    assert client.post(f"/payment/refund/{order_id}", headers=headers).status_code == 400
+
+
+def test_refund_without_invoice_returns_404(client):
+    token = _login(client)
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.post("/payment/refund/9999", headers=headers).status_code == 404
+
+
+def test_refund_shipped_order_returns_400(client):
+    token = _login(client)
+    order_id, headers = _paid_order(client, token)
+    assert client.put(f"/orders/{order_id}", json={"status": "shipped"}, headers=headers).status_code == 200
+    response = client.post(f"/payment/refund/{order_id}", headers=headers)
+    assert response.status_code == 400
+    assert client.get(f"/orders/{order_id}", headers=headers).json()["status"] == "shipped"

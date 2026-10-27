@@ -56,7 +56,7 @@ class InvoiceRepository:
                 setattr(invoice, field, value)
         return invoice
 
-    def mark_invoice_paid_and_update_order(self, invoice_id: int, order_id: int, order_status):
+    def settle_invoice_and_advance_order(self, invoice_id: int, order_id: int, order_status):
         """Atomically mark invoice as PAID and update order status in a single transaction."""
         from app.modules.orders import models as order_models
         invoice = self._db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()

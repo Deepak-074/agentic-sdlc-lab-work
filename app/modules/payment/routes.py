@@ -8,6 +8,7 @@ from app.core import dependencies as deps
 from app.db.session import get_db
 from app.modules.orders.exceptions import OrderNotFoundError
 from .service import PaymentError, InvoiceNotFoundError
+from app.modules.orders.service import InvalidOrderTransition
 
 router = APIRouter()
 
@@ -82,3 +83,19 @@ def list_invoices(
 ):
     items, total = service.list_invoices(invoice_repo, status=status, search=search, page=page, page_size=page_size)
     return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+@router.post("/refund/{order_id}", response_model=schemas.InvoiceRead)
+def refund_invoice(
+    order_id: int,
+    db: Session = Depends(get_db),
+    invoice_repo: deps.InvoiceRepository = Depends(deps.get_payment_repository),
+    order_repo: deps.OrderRepository = Depends(deps.get_orders_repository),
+    _user: str = Depends(get_current_user),
+):
+    try:
+        return service.refund_invoice(db, invoice_repo, order_repo, order_id)
+    except (InvoiceNotFoundError, OrderNotFoundError):
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    except (PaymentError, InvalidOrderTransition) as e:
+        raise HTTPException(status_code=400, detail=str(e))
